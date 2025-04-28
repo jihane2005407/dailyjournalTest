@@ -1,3 +1,4 @@
+//jihane,reina,jana
 import 'package:daily_journal_app/screens/entry_details_screen.dart';
 import 'package:daily_journal_app/screens/setting_screen.dart';
 import 'package:flutter/material.dart';
