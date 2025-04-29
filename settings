@@ -1,0 +1,146 @@
+//jihane
+import 'package:daily_journal_app/screens/home_screen.dart';
+import 'package:daily_journal_app/screens/welcome_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/constants/app_colors.dart';
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool isDark = true;
+
+  Future<void> _resetJournalData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Reset Journal"),
+            content: const Text(
+              "Are you sure you want to delete all your journal entries?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Delete"),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm == true) {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client
+            .from('journal_entries')
+            .delete()
+            .eq('user_id', user.id);
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("All entries deleted.")));
+
+        // Navigate back to HomeScreen and refresh it
+        Navigator.pop(context); // Close the settings page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    }
+  }
+
+  Future<void> _logout() async {
+    try {
+      // Log out the user
+      await Supabase.instance.client.auth.signOut();
+
+      // Show a confirmation message
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Logged out successfully.")));
+
+      // Navigate to the WelcomeScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
+    } catch (e) {
+      // Handle any error during logout
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error logging out: $e")));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: 100.w,
+        height: 100.h,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.darkBlue, AppColors.lightBlue],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Settings",
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+
+                // Reset Journal Data
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.white,
+                  ),
+                  title: const Text(
+                    "Reset Journal Data",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: _resetJournalData,
+                ),
+
+                SizedBox(height: 2.h),
+
+                // Logout Button
+                ListTile(
+                  leading: const Icon(Icons.exit_to_app, color: Colors.white),
+                  title: const Text(
+                    "Logout",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: _logout,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
